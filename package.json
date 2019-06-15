@@ -1,0 +1,27 @@
+{
+  "name": "asi-link",
+  "version": "0.1.0",
+  "description": "A nodejs version of scratch-link for serial ports",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/audetto/asi-link.git"
+  },
+  "keywords": [
+    "scratch",
+    "link"
+  ],
+  "author": "Andrea Odetti",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/audetto/asi-link/issues"
+  },
+  "homepage": "https://github.com/audetto/asi-link#readme",
+  "dependencies": {
+    "serialport": "^7.1.5",
+    "ws": "^7.0.0"
+  }
+}
