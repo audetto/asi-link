@@ -1,3 +1,5 @@
+const https = require('https');
+const fs = require('fs');
 const WebSocket = require('ws');
 const SerialPort = require('@serialport/stream')
 const MockBinding = require('@serialport/binding-mock')
@@ -9,8 +11,11 @@ SerialPort.Binding = MockBinding
 MockBinding.createPort('/dev/ROBOT', { echo: true })
 MockBinding.createPort('/dev/MBOT', { echo: true })
 
-// port used by Scratch Link
-const wss = new WebSocket.Server({ port: 20110 });
+const server = https.createServer({
+    cert: fs.readFileSync('scratch-certs.pem'),
+    key: fs.readFileSync('scratch-key.pem')
+});
+const wss = new WebSocket.Server({server: server, host: 'device-manager.scratch.mit.edu'});
 
 wss.on('connection', function (ws, request) {
     var device = new Device(ws);
@@ -39,3 +44,5 @@ wss.on('connection', function (ws, request) {
 	device = null;
     });
 });
+
+server.listen(20110);
