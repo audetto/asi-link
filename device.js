@@ -10,8 +10,15 @@ class Device {
 
     close() {
 	if (this.serialPort) {
-	    console.log(`Closing ${this.serialPort.path}`);
+	    console.log(`${this.serialPort.path}: closing`);
 	    this.serialPort.close();
+	}
+    }
+
+    makeOk(id) {
+	if (id != undefined) {
+	    var obj = {'jsonrpc': '2.0', 'id': id, 'result': null};
+	    this.sendToSocket(obj);
 	}
     }
 
@@ -20,7 +27,7 @@ class Device {
 	this.sendToSocket(obj);
     }
 
-    makeReturn(result, id) {
+    makeResult(result, id) {
 	if (id != undefined) {
 	    var obj = {'jsonrpc': '2.0', 'id': id, 'result': result};
 	    this.sendToSocket(obj);
@@ -40,7 +47,9 @@ class Device {
 	this.socket.send(res);
     }
 
-    discover(params) {
+    // methods
+
+    discover(params, id) {
 	var self = this;
 
 	SerialPort.list(function (err, ports) {
@@ -56,54 +65,72 @@ class Device {
 		self.makeCall('didDiscoverPeripheral', params, port.comName);
 	    }
 	});
-	return null;
+	self.makeOk(id);
     }
 
-    connect(params) {
+    connect(params, id) {
 	var self = this;
 
 	var port = self.portList[params.peripheralId];
-	self.serialPort = new SerialPort(port.comName, {baudRate: 115200});
-	console.log(`Connecting to ${self.serialPort.path}`);
+	self.serialPort = new SerialPort(port.comName, {baudRate: 115200, autoOpen: false});
+	console.log(`${self.serialPort.path}: connecting`);
+
+	self.serialPort.on('error', function (error) {
+	    console.log(`${self.serialPort.path}: ${error.message}`);
+	    var result = {'code': -1000, 'message': error.message};
+	    self.makeError(result, id);
+	    // no need to close it
+	    self.serialPort = null;
+	});
+
+	self.serialPort.on('open', function () {
+	    console.log(`${self.serialPort.path}: connected`);
+	    self.makeOk(id);
+	});
 
 	self.serialPort.on('data', (chunk) => {
-	    console.log(`Received ${chunk.length} bytes from ${self.serialPort.path}`);
+	    console.log(`${self.serialPort.path}: received ${chunk.length} bytes`);
 	    var params = {'message': chunk.toString('base64'),
 			  'encoding': 'base64'};
 	    // no id as we are not expecting a reply
 	    self.makeCall('didReceiveMessage', params);
 	});
 
-	return null;
+	self.serialPort.open();
     }
 
-    send(params) {
+    send(params, id) {
+	var message = params.message;
+	var encoding = params.encoding;
+	const buf = Buffer.from(message, encoding);
+
+	this.serialPort.write(buf);
+	console.log(`${this.serialPort.path}: sending ${buf.length} bytes`);
+	this.makeResult(buf.length, id);
+    }
+
+    write(params, id) {
 	var message = params.message
 	var encoding = params.encoding
 	const buf = Buffer.from(message, encoding)
-
-	this.serialPort.write(buf)
-	console.log(`Sending ${buf.length} bytes to ${this.serialPort.path}`);
-	return buf.length;
+	console.log(`${this.serialPort.path}: writing ${buf.length} bytes to ${params.characteristicId}`);
+	this.makeResult(buf.length, id);
     }
 
-    write(params) {
-	var message = params.message
-	var encoding = params.encoding
-	const buf = Buffer.from(message, encoding)
-	console.log(`Writing ${buf.length} bytes to ${params.characteristicId} of ${this.serialPort.path}`);
-	return buf.length;
+    startNotifications(params, id) {
+	console.log(`${this.serialPort.path}: starting notifications on ${params.characteristicId}`);
+	this.makeOk(id);
     }
 
-    startNotifications(params) {
-	console.log(`Starting notifications on ${params.characteristicId} of ${this.serialPort.path}`);
-	return null;
+    stopNotifications(params, id) {
+	console.log(`${this.serialPort.path}: stopping notifications on ${params.characteristicId}`);
+	this.makeOk(id);
     }
 
-    read(params) {
-	console.log(`Reading ${params.characteristicId} of ${this.serialPort.path}`);
+    read(params, id) {
+	console.log(`${this.serialPort.path}: reading ${params.characteristicId}`);
 	var result = {'message': 'DUMMY'}
-	return result;
+	this.makeResult(result, id);
     }
 
 }

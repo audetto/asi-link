@@ -24,8 +24,7 @@ wss.on('connection', function (ws, request) {
 	    var method = device[obj.method];
 	    if (method) {
 		// this is needed to bind "this" to device
-		var result = method.call(device, params);
-		device.makeReturn(result, obj.id);
+		var result = method.call(device, params, obj.id);
 	    } else {
 		console.log(`UNSUPPORTED: ${data}`);
 		var error = {'code': -32601, 'message': 'Method not found'};
