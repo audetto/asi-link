@@ -5,7 +5,7 @@ tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
 pushd ${tmp_dir}
 wget https://downloads.scratch.mit.edu/link/mac.zip
 unzip mac.zip
-xar -x -f mac-*.pkg
+xar -x -f scratch-*.pkg
 zcat ScratchLink.pkg/Payload | cpio -idv
 popd
 
