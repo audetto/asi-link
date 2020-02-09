@@ -1,3 +1,6 @@
+# certificates
+*.pem
+
 # Logs
 logs
 *.log
